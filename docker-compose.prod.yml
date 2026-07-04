@@ -1,0 +1,79 @@
+# Production stack for a single VM (e.g. Oracle Cloud Always-Free ARM).
+# Differences from the dev docker-compose.yml:
+#   - Caddy reverse proxy terminates TLS (auto Let's Encrypt) — the ONLY public
+#     surface. gateway/redis/prometheus/grafana are not published to the host.
+#   - Grafana requires login (no anonymous) and is served under /grafana.
+#   - Redis + Prometheus + Grafana use named volumes so restarts keep their data.
+#   - Secrets come from .env (see deploy/.env.example).
+#
+# Bring up:  docker compose -f docker-compose.prod.yml --env-file .env up -d --build
+# See deploy/ORACLE.md for the full runbook.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?set DOMAIN in .env}
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - gateway
+      - grafana
+
+  gateway:
+    build: .
+    restart: unless-stopped
+    environment:
+      REDIS_URL: redis://redis:6379/0
+      ADMIN_API_KEY: ${ADMIN_API_KEY:?set ADMIN_API_KEY in .env}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OTEL_ENABLED: "0"
+    depends_on:
+      - redis
+    # no published ports — reachable only via Caddy on the internal network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]   # persist buckets/budgets
+    volumes:
+      - redis_data:/data
+
+  prometheus:
+    image: prom/prometheus:latest
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./prometheus/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    # internal only — never expose Prometheus publicly (it leaks all metrics)
+
+  grafana:
+    image: grafana/grafana:latest
+    restart: unless-stopped
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:?set GRAFANA_ADMIN_PASSWORD in .env}
+      GF_AUTH_ANONYMOUS_ENABLED: "false"
+      GF_SERVER_ROOT_URL: https://${DOMAIN}/grafana/
+      GF_SERVER_SERVE_FROM_SUB_PATH: "true"
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  caddy_data:
+  caddy_config:
+  redis_data:
+  prometheus_data:
+  grafana_data:

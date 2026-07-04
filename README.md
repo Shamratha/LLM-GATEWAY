@@ -238,9 +238,13 @@ on the zero-cost mock provider. The container honors Render's `$PORT`.
 
 Prometheus + Grafana are **not** part of the Render deploy on purpose — they need
 a persistent disk (paid) and must stay always-on, which the free tier idles out.
-Run the full observability stack locally with `docker compose up`, or put the
-whole stack on a small VM (`docker compose up -d` runs all four services with
-persistent volumes). The gateway itself still exposes `/metrics` when hosted.
+
+**Full stack on a VM (with live Grafana + HTTPS).** To host all four services —
+gateway, Redis, Prometheus, Grafana — behind automatic TLS on a free Oracle Cloud
+ARM VM, use [`docker-compose.prod.yml`](docker-compose.prod.yml) (Caddy reverse
+proxy, Grafana login required, Prometheus internal-only, persistent volumes) and
+the one-shot [`deploy/setup.sh`](deploy/setup.sh). Full step-by-step:
+[`deploy/ORACLE.md`](deploy/ORACLE.md).
 
 ## Using it with the OpenAI SDK
 

@@ -1,0 +1,24 @@
+# Caddy reverse proxy — automatic HTTPS (Let's Encrypt) for {$DOMAIN}.
+# Routing on one domain:
+#   /grafana/*  -> Grafana (dashboards, login required)
+#   everything  -> the gateway (API, /docs, /metrics, /healthz, /admin)
+#
+# Caddy obtains and renews the TLS cert automatically as long as ports 80 and
+# 443 are reachable from the internet (open them in the Oracle security list
+# AND the VM firewall — deploy/setup.sh handles the VM side).
+
+{$DOMAIN} {
+	encode gzip
+
+	# Grafana is served under a sub-path; it keeps the /grafana prefix
+	# (GF_SERVER_SERVE_FROM_SUB_PATH=true), so don't strip it here.
+	handle /grafana/* {
+		reverse_proxy grafana:3000
+	}
+	redir /grafana /grafana/
+
+	# Everything else is the gateway API.
+	handle {
+		reverse_proxy gateway:8080
+	}
+}
