@@ -212,7 +212,9 @@ Run the guided demo (normal request → rate limiting → fallback → circuit b
 python scripts/demo.py
 ```
 
-Then open **Grafana → LLM Gateway** at http://localhost:3001.
+Then open **Grafana → LLM Gateway** at http://localhost:3001. For a scene-by-scene
+walkthrough (and a ready-to-record ~4-minute demo script with expected output),
+see [`docs/DEMO.md`](docs/DEMO.md).
 
 ## Quickstart (local, no Docker)
 
