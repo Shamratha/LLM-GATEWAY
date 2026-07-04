@@ -33,6 +33,13 @@ Client (OpenAI SDK) ──► POST /v1/chat/completions
                             Ollama)
 ```
 
+## Demo
+
+A walkthrough of the running stack — the gateway API and the live Grafana
+dashboards / alerting:
+
+![Walkthrough](docs/screenshots/walkthrough.gif)
+
 ## Why this exists
 
 Every company with more than one team using LLMs rebuilds some version of this.
@@ -193,7 +200,12 @@ Lua script (no extra round-trip), and it's covered by `tests/test_rate_limit.py`
 
 Three Grafana dashboards ship pre-provisioned (run `docker compose up` →
 `http://localhost:3001`). Below, rendered live against traffic from
-`scripts/traffic.py`:
+`scripts/traffic.py`.
+
+The **circuit breaker in action** — an injected `mock-fast` outage trips the
+circuit and traffic fails over, then it recovers (Operations dashboard):
+
+![Circuit breaker tripping and recovering](docs/screenshots/dashboard-demo.gif)
 
 **Performance** — latency percentiles, gateway overhead, token throughput, RPS by model
 ![Performance dashboard](docs/screenshots/performance.png)
