@@ -11,7 +11,7 @@ organization makes. It enforces **per-team rate limits and budgets**,
 > Point any OpenAI SDK at `http://localhost:8080/v1` and it just works — the
 > gateway handles routing, resilience, limits, and metrics transparently.
 
-**Live demo:** not hosted at a public URL — this is a four-service Docker Compose stack (gateway + Redis + Prometheus + Grafana) meant to run locally, so evaluation is via `docker compose up` (a hosted demo would need a paid multi-container host); the measured results and resilience trial below are from real local runs.
+**Live API:** **https://llm-gateway-gb89.onrender.com/docs** — gateway + Redis on Render's free tier (first request after idle cold-starts in ~30–60s), running the zero-cost mock provider so `/v1/chat/completions`, rate limiting, fallback, and the circuit breaker are all live. The Prometheus + Grafana plane isn't hosted (the free tier has no persistent disk and idles services out) — see the [Dashboards](#dashboards) screenshots below, run the full stack locally with `docker compose up`, or on a VM (see [Deploy](#deploy)). The measured results and resilience trial below are from local runs.
 
 ```
 Client (OpenAI SDK) ──► POST /v1/chat/completions
