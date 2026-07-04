@@ -11,11 +11,12 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import os
 import time
 
 import httpx
 
-GATEWAY = "http://localhost:8080"
+GATEWAY = os.environ.get("GATEWAY_URL", "http://localhost:8080")
 KEYS = ["sk-alpha-pro-0001", "sk-batch-lowpri-0003"]   # higher-limit teams
 
 

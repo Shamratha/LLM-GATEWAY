@@ -74,10 +74,21 @@ Median gateway-added latency is **~5 ms** and p95 **~11–15 ms** (dominated by 
 ~5 Redis round-trips per request for rate-limit + budget enforcement). The p99
 tail (tens of ms, and it swaps between the two paths run-to-run) is **jitter, not
 a systematic cost** — CPython GC pauses and single-event-loop scheduling under
-100-way concurrency — which is why p50/p95 stay stable. Throughput is bounded by
-the single dev worker and Docker Desktop's Windows networking, not gateway logic;
-the gateway is stateless (all shared state in Redis) and scales horizontally
-behind a load balancer.
+100-way concurrency — which is why p50/p95 stay stable.
+
+**On throughput — an honest note.** A multi-worker experiment (1 vs 4 uvicorn
+workers, driven by 1 and by 4 parallel load-generators) plateaued at **~160 req/s
+regardless of worker or client count**. That's not the gateway's ceiling: by
+Little's law, ~240 concurrent requests at 160 req/s implies ~1.5 s of end-to-end
+queueing, while the gateway reports only **~7 ms of its own work** per request —
+the requests are stuck in the Docker Desktop VM's virtualized loopback across the
+per-request Redis round-trips, not in gateway code. The gateway holds no
+per-request state outside Redis (only the circuit breaker is per-replica, by
+design), so it scales horizontally across hosts — but **honestly demonstrating
+that requires distributed load generation and a production Redis, which this
+single-laptop setup can't provide.** The throughput figures above are a floor set
+by the dev box; the meaningful, environment-independent number is the ~5 ms
+median overhead the gateway adds.
 
 ## Resilience trial (demonstrated)
 
