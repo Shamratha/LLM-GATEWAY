@@ -1,0 +1,8 @@
+# Dev/test dependencies — installed for running the test suite, not in production.
+-r requirements.txt
+
+pytest==8.3.4
+pytest-asyncio==0.25.2
+pytest-cov==6.0.0
+fakeredis==2.26.2
+lupa==2.4  # enables fakeredis Lua scripting so the rate-limiter script is tested

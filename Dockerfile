@@ -14,4 +14,5 @@ COPY scripts ./scripts
 
 EXPOSE 8080
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8080"]
+# Honor $PORT when the platform assigns one (Render, Fly, etc.); default 8080 locally.
+CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8080}"]

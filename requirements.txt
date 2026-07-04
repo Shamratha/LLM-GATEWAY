@@ -1,3 +1,4 @@
+# Runtime (production) dependencies. Test-only deps live in requirements-dev.txt.
 fastapi==0.115.6
 uvicorn[standard]==0.34.0
 httpx==0.28.1
@@ -8,13 +9,7 @@ pyyaml==6.0.2
 prometheus-client==0.21.1
 watchfiles==1.0.3
 
-# Observability (tracing)
+# Observability (tracing) — enabled only when OTEL_ENABLED=1
 opentelemetry-api==1.29.0
 opentelemetry-sdk==1.29.0
 opentelemetry-instrumentation-fastapi==0.50b0
-
-# Dev / test
-pytest==8.3.4
-pytest-asyncio==0.25.2
-fakeredis==2.26.2
-lupa==2.4  # enables fakeredis Lua scripting in tests

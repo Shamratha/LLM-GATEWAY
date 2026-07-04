@@ -220,11 +220,27 @@ see [`docs/DEMO.md`](docs/DEMO.md).
 
 ```bash
 python -m venv .venv && .venv/Scripts/activate      # Windows
-pip install -r requirements.txt
+pip install -r requirements-dev.txt                  # runtime + test deps
 # Redis optional — the gateway fails open (allows) if Redis is unreachable.
 uvicorn app.main:app --port 8080
 pytest                                               # run the test suite
 ```
+
+Production images install only `requirements.txt` (no test deps).
+
+## Deploy
+
+**API on Render (free tier).** A [`render.yaml`](render.yaml) Blueprint deploys
+the gateway (from the `Dockerfile`) plus a managed Redis, wired via `REDIS_URL`:
+push to GitHub, then in Render → **New + → Blueprint → this repo**. Set
+`OPENAI_API_KEY` / `ANTHROPIC_API_KEY` when prompted, or leave them blank to run
+on the zero-cost mock provider. The container honors Render's `$PORT`.
+
+Prometheus + Grafana are **not** part of the Render deploy on purpose — they need
+a persistent disk (paid) and must stay always-on, which the free tier idles out.
+Run the full observability stack locally with `docker compose up`, or put the
+whole stack on a small VM (`docker compose up -d` runs all four services with
+persistent volumes). The gateway itself still exposes `/metrics` when hosted.
 
 ## Using it with the OpenAI SDK
 
