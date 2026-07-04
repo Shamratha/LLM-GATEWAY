@@ -1,0 +1,49 @@
+{
+  "uid": "gw-business",
+  "title": "LLM Gateway — Business",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Cumulative spend by team (USD)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(gateway_cost_usd_total) by (team)", "legendFormat": "{{team}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Spend rate by team (USD/min)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        { "expr": "sum(rate(gateway_cost_usd_total[5m])) by (team) * 60", "legendFormat": "{{team}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests/s by team",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_requests_total[1m])) by (team)", "legendFormat": "{{team}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Rejections (rate limit + budget) by team",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_ratelimit_rejections_total[1m])) by (team)", "legendFormat": "ratelimit {{team}}", "refId": "A" },
+        { "expr": "sum(rate(gateway_budget_rejections_total[1m])) by (team)", "legendFormat": "budget {{team}}", "refId": "B" }
+      ]
+    }
+  ]
+}

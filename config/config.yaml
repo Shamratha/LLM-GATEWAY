@@ -1,0 +1,119 @@
+# ============================================================================
+#  LLM Gateway configuration
+#  Hot-reloadable: edit this file and changes apply within ~1s, no restart.
+#  (Team limits/budgets can also be changed live via the Admin API.)
+# ============================================================================
+
+# --- Providers -------------------------------------------------------------
+# A provider is an upstream API. `type` selects the adapter in app/providers/.
+providers:
+  mock:
+    type: mock
+    # The mock provider is in-process; no network. Great for demos & tests.
+
+  openai:
+    type: openai
+    base_url: https://api.openai.com/v1
+    api_key_env: OPENAI_API_KEY
+
+  anthropic:
+    type: anthropic
+    base_url: https://api.anthropic.com/v1
+    api_key_env: ANTHROPIC_API_KEY
+
+  ollama:
+    type: ollama
+    base_url_env: OLLAMA_BASE_URL   # e.g. http://localhost:11434
+
+# --- Model registry --------------------------------------------------------
+# Logical model name -> which provider serves it, its tier (for fallback),
+# and pricing in USD per 1,000,000 tokens.
+models:
+  # Mock models — always available, zero cost. Used for the default demo.
+  mock-fast:
+    provider: mock
+    tier: frontier
+    pricing: { input: 0.50, output: 1.50 }
+  mock-backup:
+    provider: mock
+    tier: frontier
+    pricing: { input: 0.40, output: 1.20 }
+
+  # Real frontier models. Uncomment/point fallback chains at these once you
+  # set the matching API keys in .env.
+  gpt-4o:
+    provider: openai
+    provider_model: gpt-4o
+    tier: frontier
+    pricing: { input: 2.50, output: 10.00 }
+  claude-sonnet:
+    provider: anthropic
+    provider_model: claude-sonnet-4-6
+    tier: frontier
+    pricing: { input: 3.00, output: 15.00 }
+  llama3-local:
+    provider: ollama
+    provider_model: llama3
+    tier: economy
+    pricing: { input: 0.00, output: 0.00 }
+
+# --- Fallback chains (per tier) --------------------------------------------
+# Ordered list tried when the requested model is unhealthy/failing.
+# The requested model is always attempted first; the chain provides backups.
+fallback_chains:
+  frontier: [mock-fast, mock-backup]      # demo default: swap to [gpt-4o, claude-sonnet] with keys
+  economy: [llama3-local, mock-fast]
+
+# --- Resilience defaults ---------------------------------------------------
+resilience:
+  retry:
+    max_attempts: 3            # attempts against a single model before falling back
+    base_delay_ms: 200         # exponential backoff base
+    max_delay_ms: 2000
+  circuit_breaker:
+    failure_threshold: 5       # consecutive/window failures to open the circuit
+    window_seconds: 30
+    cooldown_seconds: 20       # time in OPEN before a half-open probe
+  health_check:
+    interval_seconds: 30
+    timeout_seconds: 5
+
+# --- Teams -----------------------------------------------------------------
+# Each team authenticates with `api_key`. Limits & budgets are enforced live.
+teams:
+  - id: team-alpha
+    name: "Alpha (Pro plan)"
+    api_key: sk-alpha-pro-0001
+    allowed_models: [mock-fast, mock-backup, gpt-4o, claude-sonnet]
+    rate_limits:
+      requests_per_min: 60
+      tokens_per_min: 100000
+    budget:
+      period: monthly          # monthly | daily
+      limit_usd: 500.0
+      warn_pct: 80
+
+  - id: team-bravo
+    name: "Bravo (Starter plan)"
+    api_key: sk-bravo-start-0002
+    allowed_models: [mock-fast]            # restricted to one model
+    rate_limits:
+      requests_per_min: 10
+      tokens_per_min: 10000
+    budget:
+      period: daily
+      limit_usd: 5.0
+      warn_pct: 80
+
+  - id: team-batch
+    name: "Batch jobs (low priority)"
+    api_key: sk-batch-lowpri-0003
+    priority: low              # shed first when the RPM bucket runs low (reserves headroom for higher priorities)
+    allowed_models: [mock-fast, mock-backup]
+    rate_limits:
+      requests_per_min: 120
+      tokens_per_min: 500000
+    budget:
+      period: monthly
+      limit_usd: 200.0
+      warn_pct: 90

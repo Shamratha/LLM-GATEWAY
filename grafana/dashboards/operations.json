@@ -1,0 +1,48 @@
+{
+  "uid": "gw-operations",
+  "title": "LLM Gateway — Operations",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Provider health (1=healthy, .5=degraded, 0=down)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        { "expr": "gateway_provider_health", "legendFormat": "{{provider_model}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Circuit breaker state (0=closed, 1=open, 2=half-open)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "min": 0, "max": 2 }, "overrides": [] },
+      "targets": [
+        { "expr": "gateway_circuit_state", "legendFormat": "{{provider_model}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Error rate by provider (errors/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_errors_total[1m])) by (provider)", "legendFormat": "{{provider}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Fallback activations/s",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_fallback_total[1m])) by (from_model, to_model)", "legendFormat": "{{from_model}} -> {{to_model}}", "refId": "A" }
+      ]
+    }
+  ]
+}

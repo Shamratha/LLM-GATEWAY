@@ -1,0 +1,117 @@
+apiVersion: 1
+
+# Grafana-managed alert rules (mirror of prometheus/alerts.yml) so the Grafana
+# Alerting page shows live Normal/Firing status against the Prometheus data.
+groups:
+  - orgId: 1
+    name: gateway-alerts
+    folder: LLM Gateway
+    interval: 30s
+    rules:
+      - uid: gw-high-error-rate
+        title: High provider error rate
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+        annotations:
+          summary: ">20% of requests to a provider are failing (fallback should engage)"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "sum(rate(gateway_errors_total[2m])) by (provider) / clamp_min(sum(rate(gateway_requests_total[2m])) by (provider), 1)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.2] }
+
+      - uid: gw-latency-sla
+        title: Latency P99 above SLA
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: warning
+        annotations:
+          summary: "P99 latency > 5s for a provider"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 600, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "histogram_quantile(0.99, sum(rate(gateway_request_latency_seconds_bucket[5m])) by (le, provider))"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [5] }
+
+      - uid: gw-circuit-open
+        title: Circuit breaker open
+        condition: C
+        for: 30s
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: critical
+        annotations:
+          summary: "A circuit is open/half-open; traffic is routing to fallbacks"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "max(gateway_circuit_state) by (provider_model)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: gt, params: [0.5] }
+
+      - uid: gw-provider-down
+        title: Provider model down
+        condition: C
+        for: 1m
+        noDataState: OK
+        execErrState: OK
+        labels:
+          severity: critical
+        annotations:
+          summary: "Health checks failing for a provider model"
+        data:
+          - refId: A
+            relativeTimeRange: { from: 300, to: 0 }
+            datasourceUid: prometheus
+            model:
+              refId: A
+              instant: true
+              expr: "min(gateway_provider_health) by (provider_model)"
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              refId: C
+              type: threshold
+              expression: A
+              conditions:
+                - evaluator: { type: lt, params: [0.5] }

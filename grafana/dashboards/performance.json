@@ -1,0 +1,50 @@
+{
+  "uid": "gw-performance",
+  "title": "LLM Gateway — Performance",
+  "schemaVersion": 39,
+  "version": 1,
+  "refresh": "5s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "type": "timeseries",
+      "title": "Latency percentiles by provider (s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.50, sum(rate(gateway_request_latency_seconds_bucket[5m])) by (le, provider))", "legendFormat": "p50 {{provider}}", "refId": "A" },
+        { "expr": "histogram_quantile(0.95, sum(rate(gateway_request_latency_seconds_bucket[5m])) by (le, provider))", "legendFormat": "p95 {{provider}}", "refId": "B" },
+        { "expr": "histogram_quantile(0.99, sum(rate(gateway_request_latency_seconds_bucket[5m])) by (le, provider))", "legendFormat": "p99 {{provider}}", "refId": "C" }
+      ]
+    },
+    {
+      "type": "stat",
+      "title": "Gateway overhead p99 (ms)",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "fieldConfig": { "defaults": { "unit": "ms" }, "overrides": [] },
+      "targets": [
+        { "expr": "histogram_quantile(0.99, sum(rate(gateway_overhead_seconds_bucket[5m])) by (le)) * 1000", "legendFormat": "overhead p99", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Token throughput (tokens/s)",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_tokens_total[1m])) by (direction)", "legendFormat": "{{direction}}", "refId": "A" }
+      ]
+    },
+    {
+      "type": "timeseries",
+      "title": "Requests/s by model",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "prometheus", "uid": "prometheus" },
+      "targets": [
+        { "expr": "sum(rate(gateway_requests_total[1m])) by (model)", "legendFormat": "{{model}}", "refId": "A" }
+      ]
+    }
+  ]
+}

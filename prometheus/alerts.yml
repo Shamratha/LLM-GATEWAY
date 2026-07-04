@@ -1,0 +1,36 @@
+groups:
+  - name: llm-gateway
+    rules:
+      - alert: HighProviderErrorRate
+        expr: |
+          sum(rate(gateway_errors_total[2m])) by (provider)
+            / clamp_min(sum(rate(gateway_requests_total[2m])) by (provider), 1) > 0.2
+        for: 1m
+        labels: { severity: warning }
+        annotations:
+          summary: "High error rate for provider {{ $labels.provider }}"
+          description: ">20% of requests to {{ $labels.provider }} are failing. Auto-fallback should be engaging."
+
+      - alert: LatencyP99AboveSLA
+        expr: histogram_quantile(0.99, sum(rate(gateway_request_latency_seconds_bucket[5m])) by (le, provider)) > 5
+        for: 2m
+        labels: { severity: warning }
+        annotations:
+          summary: "P99 latency > 5s for {{ $labels.provider }}"
+          description: "Latency SLA breach on provider {{ $labels.provider }}."
+
+      - alert: CircuitBreakerOpen
+        expr: gateway_circuit_state == 1
+        for: 30s
+        labels: { severity: critical }
+        annotations:
+          summary: "Circuit OPEN for {{ $labels.provider_model }}"
+          description: "Traffic is being routed to fallbacks for {{ $labels.provider_model }}."
+
+      - alert: ProviderDown
+        expr: gateway_provider_health == 0
+        for: 1m
+        labels: { severity: critical }
+        annotations:
+          summary: "Provider model {{ $labels.provider_model }} is DOWN"
+          description: "Health checks failing for {{ $labels.provider_model }}."
