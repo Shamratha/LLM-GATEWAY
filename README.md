@@ -189,6 +189,21 @@ Lua script (no extra round-trip), and it's covered by `tests/test_rate_limit.py`
 (`test_priority_ordering_under_pressure`). The reserve fractions live in
 `PRIORITY_RESERVE` in [`app/rate_limiter.py`](app/rate_limiter.py).
 
+## Dashboards
+
+Three Grafana dashboards ship pre-provisioned (run `docker compose up` →
+`http://localhost:3001`). Below, rendered live against traffic from
+`scripts/traffic.py`:
+
+**Performance** — latency percentiles, gateway overhead, token throughput, RPS by model
+![Performance dashboard](docs/screenshots/performance.png)
+
+**Operations** — provider health, circuit-breaker state, error rate, fallback events
+![Operations dashboard](docs/screenshots/operations.png)
+
+**Business** — cumulative + per-minute spend by team, request rates, rejections
+![Business dashboard](docs/screenshots/business.png)
+
 ## Quickstart (Docker — full stack)
 
 ```bash
