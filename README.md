@@ -1,5 +1,7 @@
 # LLM Gateway
 
+[![CI](https://github.com/Shamratha/LLM-GATEWAY/actions/workflows/ci.yml/badge.svg)](https://github.com/Shamratha/LLM-GATEWAY/actions/workflows/ci.yml)
+
 A production-style API gateway that sits in front of every LLM call an
 organization makes. It enforces **per-team rate limits and budgets**,
 **automatically falls back** to alternate providers during outages, and gives
